@@ -1,5 +1,7 @@
 name: Database indexes
-on: [push, pull_request]
+on:
+  repository_dispatch:
+    types: [test-command]
 defaults:
   run:
     working-directory: 'galaxy root'

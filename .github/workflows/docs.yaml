@@ -1,5 +1,7 @@
 name: Build docs
-on: [push, pull_request]
+on:
+  repository_dispatch:
+    types: [test-command]
 jobs:
   build:
     runs-on: ubuntu-latest

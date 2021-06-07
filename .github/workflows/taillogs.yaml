@@ -1,0 +1,205 @@
+on:
+  repository_dispatch:
+    types: [taillogs-command]
+
+jobs:
+  events:
+    if: contains(github.event.client_payload.slash_command.args.unnamed.all, 'events') || contains(github.event.client_payload.slash_command.args.unnamed.all, 'all')
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+        
+      - name: Record events and logs
+        id: record
+        run: |
+          git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" events | tail -n 100 > gxyevents;
+        shell: bash
+
+      - id: set
+        run: |
+          gxyevents=$(cat gxyevents)
+          gxyevents="${gxyevents//$'\n'/'%0A'}"
+          echo ::set-output name=gxyevents::$gxyevents
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: |
+            This is your k8s events log from ${{ steps.date.outputs.date }}:
+            ```
+            ${{ steps.set.outputs.gxyevents }}
+            ```
+
+
+  web:
+    if: contains(github.event.client_payload.slash_command.args.unnamed.all, 'web') || contains(github.event.client_payload.slash_command.args.unnamed.all, 'all')
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+        
+      - name: Record events and logs
+        id: record
+        run: |
+          git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" web | tail -n 100 > gxyweblogs;
+        shell: bash
+
+      - id: set
+        run: |
+          gxyweblogs=$(cat gxyweblogs)
+          gxyweblogs="${gxyweblogs//$'\n'/'%0A'}"
+          echo ::set-output name=gxyweblogs::$gxyweblogs
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: |
+            This is your web handler log from ${{ steps.date.outputs.date }}:
+            ```
+            ${{ steps.set.outputs.gxyweblogs }}
+            ```
+
+  job:
+    if: contains(github.event.client_payload.slash_command.args.unnamed.all, 'job') || contains(github.event.client_payload.slash_command.args.unnamed.all, 'all')
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+        
+      - name: Record events and logs
+        id: record
+        run: |
+          git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" job | tail -n 100 > gxyjoblogs;
+        shell: bash
+
+      - id: set
+        run: |
+          gxyjoblogs=$(cat gxyjoblogs)
+          gxyjoblogs="${gxyjoblogs//$'\n'/'%0A'}"
+          echo ::set-output name=gxyjoblogs::$gxyjoblogs
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: |
+            This is your job handler log from ${{ steps.date.outputs.date }}:
+            ```
+            ${{ steps.set.outputs.gxyjoblogs }}
+            ```
+
+  workflow:
+    if: contains(github.event.client_payload.slash_command.args.unnamed.all, 'workflow') || contains(github.event.client_payload.slash_command.args.unnamed.all, 'all')
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+        
+      - name: Record events and logs
+        id: record
+        run: |
+          git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" workflow | tail -n 100 > gxywflogs;
+        shell: bash
+
+      - id: set
+        run: |
+          gxywflogs=$(cat gxywflogs)
+          gxywflogs="${gxywflogs//$'\n'/'%0A'}"
+          echo ::set-output name=gxywflogs::$gxywflogs
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: |
+            This is your workflow handler log from ${{ steps.date.outputs.date }}:
+            ```
+            ${{ steps.set.outputs.gxywflogs }}
+            ```
+
+  wrong:
+    if: "!contains(github.event.client_payload.slash_command.args.unnamed.all, 'all') && !contains(github.event.client_payload.slash_command.args.unnamed.all, 'events') && !contains(github.event.client_payload.slash_command.args.unnamed.all, 'web') && !contains(github.event.client_payload.slash_command.args.unnamed.all, 'job') && !contains(github.event.client_payload.slash_command.args.unnamed.all, 'workflow')"
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: "No valid arguments were found. Expected: `/gistlogs (all|events|web|job|workflow)`. Got `/gistlogs ${{github.event.client_payload.slash_command.args.unnamed.all}}`"

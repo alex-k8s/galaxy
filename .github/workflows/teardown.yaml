@@ -1,0 +1,33 @@
+on:
+  repository_dispatch:
+    types: [teardown-command]
+
+jobs:
+  teardown:
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+    name: Teardown
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+      - name: Delete releases
+        run: |
+          helm del "pr-${PR_NUM}-gxy-rls" -n "pr-${PR_NUM}" > gxydeleteoutput
+      - id: set
+        run: |
+          gxyout=$(cat gxydeleteoutput)
+          gxyout="${gxyout//$'\n'/'%0A'}"
+          echo ::set-output name=gxyoutput::$gxyout
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: ${{ steps.set.outputs.gxyoutput }}
