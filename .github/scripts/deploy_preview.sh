@@ -7,42 +7,31 @@ git diff --name-status "$PR_BASE" "$PR_HEAD"
 # Abort if anything but modified and added
 abort=$(git diff --name-status "$PR_BASE" "$PR_HEAD" | cut -c1 | grep -E "C|D|R|T|U|X|B" )
 
-echo "Starting"
 
 if [[ ! -n $abort ]]; then
 
-    curl -O https://gist.githubusercontent.com/almahmoud/a67fb678b76c901e19385f85d02ef8ca/raw/44ab7bf540c2b605deb940b2dea1060dd60d888c/values.yaml
+    echo "No unsupported changes detected. Starting deployment."
+    
+    export GALAXYDIR="$(pwd)"
 
-    helm repo add gxy https://github.com/cloudve/helm-charts/raw/preview-ci
+    cd ..
 
-    echo "Starting making list"
-    git diff --name-only "$PR_BASE" "$PR_HEAD" > filelist
+    export BASEDIR="$(pwd)"
 
-    while IFS= read -r line; do echo -n $line | base64; done < filelist | tr A-Z a-z | sed -E s/[^a-z0-9]+/-/g | sed -E s/^-+\|-+$//g | rev | cut -c -30 > encfilelist
-    sed -E 's#.+#--set-file configs."#g' filelist > start
-    sed -E 's#.+#=#g' filelist > middle
-    paste -d "\0\"" start encfilelist middle filelist > setfilelist
-    PROJMAN_SET=$(paste -s -d ' ' setfilelist)
+    git clone https://github.com/CloudVE/galaxy-k8s-dev-env
+    git clone https://github.com/galaxyproject/galaxy-helm
+    cd galaxy-helm/galaxy
+    helm dep update
+    cd ../..
+    export CHARTDIR="$(pwd)/galaxy-helm"
+    echo "Starting making symlinks"
 
-    echo helm upgrade --install "galaxy-preview-injection-$PR_NUM" gxy/projman --set projectName="galaxy-$PR_NUM" $PROJMAN_SET
-    helm upgrade --install galaxy-preview-injection-$PR_NUM gxy/projman --set projectName="galaxy-$PR_NUM" $PROJMAN_SET
+    cd galaxy-k8s-dev-env
 
-    cat <<EOF > vols.yaml
-extraVolumes:
-EOF
+    bash symlink_branch.sh "pr-${PR_NUM}" "$GALAXYDIR" "$CHARTDIR"
 
-    cat <<EOF > vol-mounts.yaml
-extraVolumeMounts:
-EOF
+    bash update_links.sh "pr-${PR_NUM}" "$DEVENV_DOMAIN" "/galaxy-pr-${PR_NUM}" "$PR_BASE"
 
-    while read line; do
-      echo "Injecting $line"
-      sed -E "s#--set-file configs.\"([^\"]+)\"=(([^/]+/)+)([^/\n]+)#  - name: \"code-injection-\1\"\n    configMap:\n      name: galaxy-$PR_NUM-projman-configs\n      items:\n        - key: \"\1\"\n          path: \"\4\"#g" <<< $line >> vols.yaml
-      sed -E "s#--set-file configs.\"([^\"]+)\"=(([^/]+/)+)([^/\n]+)#  - name: \"code-injection-\1\"\n    subPath: \"\4\"\n    mountPath: \"/galaxy/server/\2\4\"#g" <<< $line >> vol-mounts.yaml
-
-    done <setfilelist
-
-    echo helm upgrade --install "galaxy-preview-$PR_NUM" gxy/galaxy -f values.yaml -f vols.yaml -f vol-mounts.yaml --set ingress.path="/issue-$PR_NUM/galaxy/" $(echo "$@")
-    helm upgrade --install "galaxy-preview-$PR_NUM" gxy/galaxy -f values.yaml -f vols.yaml -f vol-mounts.yaml --set ingress.path="/issue-$PR_NUM/galaxy" $(echo "$@") > gxyinstalloutput
+    bash helm_update.sh "pr-${PR_NUM}" "pr-${PR_NUM}" $@ --set postgresql.deploy=false --wait > "$GALAXYDIR/gxyinstalloutput"
 
 fi
