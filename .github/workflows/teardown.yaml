@@ -15,16 +15,17 @@ jobs:
     steps:
       - name: save kubeconfig
         shell: bash
-        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG}}" > ~/.kube/config
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
       - name: Delete releases
         run: |
-          helm del "galaxy-preview-$PR_NUM"
-          helm del "galaxy-preview-injection-$PR_NUM"
+          helm del "pr-${PR_NUM}-gxy-rls" -n "pr-${PR_NUM}" > gxydeleteoutput
+      - id: set
+        run: |
+          echo ::set-output name=gxyoutput::$(cat gxydeleteoutput)
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
-          body: |
-            "Preview deleted"
+          body: ${{ steps.set.outputs.gxyoutput }}
