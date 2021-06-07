@@ -1,0 +1,39 @@
+on:
+  repository_dispatch:
+    types: [preview-command]
+
+jobs:
+  preview:
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: '${{ github.event.client_payload.pull_request.base.sha }}'
+      - uses: actions/checkout@v2
+        with:
+          ref: '${{ github.event.client_payload.pull_request.head.sha }}'
+
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG}}" > ~/.kube/config
+      - name: deploy
+        id: deploy
+        run: bash .github/scripts/deploy_preview.sh ${{ github.event.client_payload.slash_command.args.named.args }}
+        shell: bash
+      - id: set
+        run: |
+          echo ::set-output name=gxyoutput::$(cat gxyinstalloutput)
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: ${{ steps.set.outputs.gxyoutput }}
