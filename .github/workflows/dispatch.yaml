@@ -10,8 +10,8 @@ jobs:
         uses: peter-evans/slash-command-dispatch@v2
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          commands: deploy, teardown, test
-          reactions: false
+          commands: deploy, teardown, test, gistlogs
+          reactions: rocket
           permission: write
           issue-type: pull-request
           static-args: |

@@ -1,0 +1,387 @@
+on:
+  repository_dispatch:
+    types: [gistlogs-command]
+
+jobs:
+  all:
+    if: contains(github.event.client_payload.slash_command.args.all, 'all')
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+        
+      - name: Record events and logs
+        id: record
+        run: |
+          git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" events > gxyevents;
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" web > gxyweblogs;
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" job  > gxyjoblogs;
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" worfklow > gxywflogs;
+        shell: bash
+
+      - uses : cruizsan/github-action-gists@master
+        id: create_gist
+        with:
+          auth: galaxy-k8s:${{ secrets.REPO_ACCESS_TOKEN }}
+          title: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          content: "${{ steps.date.outputs.date }}"
+          description: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          public: false
+          response_field: 'all'
+
+      - name: Get gist url from API response
+        id: gisturl
+        run: |
+          gisturl=$(echo '${{steps.create_gist.outputs.response}}' | jq -r '."galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}".raw_url');
+          echo ::set-output name=gisturl::$gisturl;
+
+      - name: Extract gistid
+        id: gistinfo
+        uses: frabert/replace-string-action@v1.2
+        with:
+          pattern: '.*/galaxy-k8s/([^/]+)/.*'
+          string: '${{steps.gisturl.outputs.gisturl}}'
+          replace-with: '$1'
+
+      - name: Deploy gxyevents
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
+          gist_file_name: k8s-events.log
+          file_path: ./gxyevents
+
+      - name: Deploy gxyweblogs
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
+          gist_file_name: web-handler.log
+          file_path: ./gxyweblogs
+      - name: Deploy gxyjoblogs
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
+          gist_file_name: job-handler.log
+          file_path: ./gxyjoblogs
+      - name: Deploy gxywflogs
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
+          gist_file_name: worfklow-handler.log
+          file_path: ./gxywflogs
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: "See all your latest logs for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: https://gist.githubusercontent.com/galaxy-k8s/${{ steps.gistinfo.outputs.replaced }}"
+
+  events:
+    if: contains(github.event.client_payload.slash_command.args.all, 'events')
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+        
+      - name: Record events and logs
+        id: record
+        run: |
+          git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" events > gxyevents;
+        shell: bash
+
+      - uses : cruizsan/github-action-gists@master
+        id: create_gist
+        with:
+          auth: galaxy-k8s:${{ secrets.REPO_ACCESS_TOKEN }}
+          title: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          content: "${{ steps.date.outputs.date }}"
+          description: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          public: false
+          response_field: 'all'
+
+      - name: Get gist url from API response
+        id: gisturl
+        run: |
+          gisturl=$(echo '${{steps.create_gist.outputs.response}}' | jq -r '."galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}".raw_url');
+          echo ::set-output name=gisturl::$gisturl;
+
+      - name: Extract gistid
+        id: gistinfo
+        uses: frabert/replace-string-action@v1.2
+        with:
+          pattern: '.*/galaxy-k8s/([^/]+)/.*'
+          string: '${{steps.gisturl.outputs.gisturl}}'
+          replace-with: '$1'
+
+      - name: Deploy gxyevents
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
+          gist_file_name: k8s-events.log
+          file_path: ./gxyevents
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: "See all your latest k8s events for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: https://gist.githubusercontent.com/galaxy-k8s/${{ steps.gistinfo.outputs.replaced }}"
+
+
+  web:
+    if: contains(github.event.client_payload.slash_command.args.all, 'web')
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+        
+      - name: Record events and logs
+        id: record
+        run: |
+          git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" web > gxyweblogs;
+        shell: bash
+
+      - uses : cruizsan/github-action-gists@master
+        id: create_gist
+        with:
+          auth: galaxy-k8s:${{ secrets.REPO_ACCESS_TOKEN }}
+          title: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          content: "${{ steps.date.outputs.date }}"
+          description: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          public: false
+          response_field: 'all'
+
+      - name: Get gist url from API response
+        id: gisturl
+        run: |
+          gisturl=$(echo '${{steps.create_gist.outputs.response}}' | jq -r '."galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}".raw_url');
+          echo ::set-output name=gisturl::$gisturl;
+
+      - name: Extract gistid
+        id: gistinfo
+        uses: frabert/replace-string-action@v1.2
+        with:
+          pattern: '.*/galaxy-k8s/([^/]+)/.*'
+          string: '${{steps.gisturl.outputs.gisturl}}'
+          replace-with: '$1'
+
+      - name: Deploy gxyweblogs
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
+          gist_file_name: web-handler.log
+          file_path: ./gxyweblogs
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: "See all your latest web handler logs for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: https://gist.githubusercontent.com/galaxy-k8s/${{ steps.gistinfo.outputs.replaced }}"
+
+
+  job:
+    if: contains(github.event.client_payload.slash_command.args.all, 'job')
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+        
+      - name: Record events and logs
+        id: record
+        run: |
+          git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" job  > gxyjoblogs;
+        shell: bash
+
+      - uses : cruizsan/github-action-gists@master
+        id: create_gist
+        with:
+          auth: galaxy-k8s:${{ secrets.REPO_ACCESS_TOKEN }}
+          title: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          content: "${{ steps.date.outputs.date }}"
+          description: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          public: false
+          response_field: 'all'
+
+      - name: Get gist url from API response
+        id: gisturl
+        run: |
+          gisturl=$(echo '${{steps.create_gist.outputs.response}}' | jq -r '."galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}".raw_url');
+          echo ::set-output name=gisturl::$gisturl;
+
+      - name: Extract gistid
+        id: gistinfo
+        uses: frabert/replace-string-action@v1.2
+        with:
+          pattern: '.*/galaxy-k8s/([^/]+)/.*'
+          string: '${{steps.gisturl.outputs.gisturl}}'
+          replace-with: '$1'
+
+      - name: Deploy gxyjoblogs
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
+          gist_file_name: job-handler.log
+          file_path: ./gxyjoblogs
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: "See all your latest job handler logs for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: https://gist.githubusercontent.com/galaxy-k8s/${{ steps.gistinfo.outputs.replaced }}"
+
+
+  workflow:
+    if: contains(github.event.client_payload.slash_command.args.all, 'workflow')
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: save kubeconfig
+        shell: bash
+        run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+        
+      - name: Record events and logs
+        id: record
+        run: |
+          git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" worfklow > gxywflogs;
+        shell: bash
+
+      - uses : cruizsan/github-action-gists@master
+        id: create_gist
+        with:
+          auth: galaxy-k8s:${{ secrets.REPO_ACCESS_TOKEN }}
+          title: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          content: "${{ steps.date.outputs.date }}"
+          description: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          public: false
+          response_field: 'all'
+
+      - name: Get gist url from API response
+        id: gisturl
+        run: |
+          gisturl=$(echo '${{steps.create_gist.outputs.response}}' | jq -r '."galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}".raw_url');
+          echo ::set-output name=gisturl::$gisturl;
+
+      - name: Extract gistid
+        id: gistinfo
+        uses: frabert/replace-string-action@v1.2
+        with:
+          pattern: '.*/galaxy-k8s/([^/]+)/.*'
+          string: '${{steps.gisturl.outputs.gisturl}}'
+          replace-with: '$1'
+
+      - name: Deploy gxywflogs
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
+          gist_file_name: worfklow-handler.log
+          file_path: ./gxywflogs
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: "See all your latest workflow handler logs for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: https://gist.githubusercontent.com/galaxy-k8s/${{ steps.gistinfo.outputs.replaced }}"
+
+  wrong:
+    if: "!contains(github.event.client_payload.slash_command.args.all, 'all') && !contains(github.event.client_payload.slash_command.args.all, 'events') && !contains(github.event.client_payload.slash_command.args.all, 'web') && !contains(github.event.client_payload.slash_command.args.all, 'job') && !contains(github.event.client_payload.slash_command.args.all, 'workflow')"
+    container:
+      image: dtzar/helm-kubectl:latest
+      env:
+        PR_NUM: ${{ github.event.client_payload.github.payload.issue.number }}
+        PR_HEAD: ${{ github.event.client_payload.pull_request.head.sha }}
+        PR_BASE: ${{ github.event.client_payload.pull_request.base.sha }}
+        DEVENV_DOMAIN: ${{ secrets.DEVENV_DOMAIN }}
+    name: Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: "No valid arguments were found. Expected: `/gistlogs (all|events|web|job|workflow)`. Got `/gistlogs ${{github.event.client_payload.slash_command.args.all}}`"
