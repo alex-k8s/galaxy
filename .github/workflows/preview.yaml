@@ -63,7 +63,6 @@ jobs:
       - name: Set date and time
         id: date
         run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
-
       - uses : cruizsan/github-action-gists@master
         id: create_gist
         with:
@@ -74,19 +73,26 @@ jobs:
           public: false
           response_field: 'all'
 
-      - name: Get gist info from github API response
-        shell: bash
-        id: gist
+      - name: Get gist url from API response
+        id: gisturl
         run: |
-          gistid=$(echo '${{steps.create_gist.outputs.response}}' | jq -r '."galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}".raw_url' | grep -oP 'galaxy-k8s/\K[^/]+')
-          echo ::set-output name=gisturl::$(echo "https://gist.githubusercontent.com/galaxy-k8s/$gistid")
-          echo ::set-output name=gistid::$gistid
+          gisturl=$(echo '${{steps.create_gist.outputs.response}}' | jq -r '."galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}".raw_url');
+          echo ::set-output name=gisturl::$gisturl;
+
+
+      - name: Extract gistid
+        id: gistinfo
+        uses: frabert/replace-string-action@v1.2
+        with:
+          pattern: '.*/galaxy-k8s/([^/]+)/.*'
+          string: '${{steps.gisturl.outputs.gisturl}}'
+          replace-with: '$1'
 
       - name: Deploy gxyevents
         uses: exuanbo/actions-deploy-gist@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          gist_id: "${{ steps.gist.outputs.gistid }}"
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
           gist_file_name: k8s-events.log
           file_path: ./gxyevents
 
@@ -94,21 +100,21 @@ jobs:
         uses: exuanbo/actions-deploy-gist@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          gist_id: "${{ steps.gist.outputs.gistid }}"
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
           gist_file_name: web-handler.log
           file_path: ./gxyweblogs
       - name: Deploy gxyjoblogs
         uses: exuanbo/actions-deploy-gist@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          gist_id: "${{ steps.gist.outputs.gistid }}"
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
           gist_file_name: job-handler.log
           file_path: ./gxyjoblogs
       - name: Deploy gxywflogs
         uses: exuanbo/actions-deploy-gist@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          gist_id: "${{ steps.gist.outputs.gistid }}"
+          gist_id: "${{ steps.gistinfo.outputs.replaced }}"
           gist_file_name: worfklow-handler.log
           file_path: ./gxywflogs
 
@@ -118,6 +124,6 @@ jobs:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
-          body: "See your startup logs for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: ${{ steps.gist.outputs.gisturl }}"
+          body: "See your startup logs for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: https://gist.githubusercontent.com/galaxy-k8s/${{ steps.gistinfo.outputs.replaced }}"
 
 
