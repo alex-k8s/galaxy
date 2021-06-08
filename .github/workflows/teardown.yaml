@@ -21,7 +21,9 @@ jobs:
           helm del "pr-${PR_NUM}-gxy-rls" -n "pr-${PR_NUM}" > gxydeleteoutput
       - id: set
         run: |
-          echo ::set-output name=gxyoutput::$(cat gxydeleteoutput)
+          gxyout=$(cat gxydeleteoutput)
+          gxyout="${gxyout//$'\n'/'%0A'}"
+          echo ::set-output name=gxyoutput::$gxyout
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v1
         with:
