@@ -159,7 +159,9 @@ class KubernetesJobRunner(AsynchronousJobRunner):
         )
         job = Job(self._pykube_api, k8s_job_obj)
         try:
+            log.debug("\n\n\n\n\nTESTING\n\n\n\n")
             job.create()
+            log.debug(job)
         except HTTPError:
             log.exception("Kubernetes failed to create job, HTTP exception encountered")
             ajs.runner_state = JobState.runner_states.UNKNOWN_ERROR
