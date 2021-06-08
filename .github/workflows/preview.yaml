@@ -14,6 +14,14 @@ jobs:
     name: Preview
     runs-on: ubuntu-latest
     steps:
+      - name: Create starting comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: "Preview command dispatched, starting deployment on default cluster"
+
       - uses: actions/checkout@v2
         with:
           ref: '${{ github.event.client_payload.pull_request.base.sha }}'
@@ -28,13 +36,88 @@ jobs:
         id: deploy
         run: bash .github/scripts/deploy_preview.sh ${{ github.event.client_payload.slash_command.args.named.args }}
         shell: bash
+
       - id: set
         run: |
-          echo ::set-output name=gxyoutput::$(cat gxyinstalloutput)
-      - name: Create comment
+          gxyout=$(cat gxyinstalloutput)
+          gxyout="${gxyout//$'\n'/'%0A'}"
+          echo ::set-output name=gxyoutput::$gxyout
+
+      - name: Comment url to live instance
         uses: peter-evans/create-or-update-comment@v1
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
           body: ${{ steps.set.outputs.gxyoutput }}
+
+      - name: Record events and logs
+        id: record
+        run: |
+          kubectl get events -n "pr-${{ github.event.client_payload.github.payload.issue.number }}" > gxyevents;
+          while [[ $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-web[^ ]*' | wc -l) -ge 2 ]]; do echo "Waiting for extra web pod to be terminated" && sleep 1; done && kubectl logs -n "pr-$PR_NUM" $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-web[^ ]*') > gxyweblogs;
+          while [[ $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-job[^ ]*' | wc -l) -ge 2 ]]; do echo "Waiting for extra job pod to be terminated" && sleep 1; done && kubectl logs -n "pr-$PR_NUM" $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-job[^ ]*')  > gxyjoblogs;
+          while [[ $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-workflow[^ ]*' | wc -l) -ge 2 ]]; do echo "Waiting for extra workflow pod to be terminated" && sleep 1; done && kubectl logs -n "pr-$PR_NUM" $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-workflow[^ ]*') > gxywflogs;
+        shell: bash
+
+      - name: Set date and time
+        id: date
+        run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+
+      - uses : cruizsan/github-action-gists@master
+        id: create_gist
+        with:
+          auth: galaxy-k8s:${{ secrets.REPO_ACCESS_TOKEN }}
+          title: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          content: "${{ steps.date.outputs.date }}"
+          description: 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}'
+          public: false
+          response_field: 'all'
+
+      - name: Get gist info from github API response
+        shell: bash
+        id: gist
+        run: |
+          gistid=$(echo '${{steps.create_gist.outputs.response}}' | jq -r '."galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}".raw_url' | grep -oP 'galaxy-k8s/\K[^/]+')
+          echo ::set-output name=gisturl::$(echo "https://gist.githubusercontent.com/galaxy-k8s/$gistid")
+          echo ::set-output name=gistid::$gistid
+
+      - name: Deploy gxyevents
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gist.outputs.gistid }}"
+          gist_file_name: k8s-events.log
+          file_path: ./gxyevents
+
+      - name: Deploy gxyweblogs
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gist.outputs.gistid }}"
+          gist_file_name: web-handler.log
+          file_path: ./gxyweblogs
+      - name: Deploy gxyjoblogs
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gist.outputs.gistid }}"
+          gist_file_name: job-handler.log
+          file_path: ./gxyjoblogs
+      - name: Deploy gxywflogs
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          gist_id: "${{ steps.gist.outputs.gistid }}"
+          gist_file_name: worfklow-handler.log
+          file_path: ./gxywflogs
+
+      - name: Comment url to gist
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: "See your startup logs for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: ${{ steps.gist.outputs.gisturl }}"
+
+
