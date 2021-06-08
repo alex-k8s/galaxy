@@ -1,5 +1,9 @@
 name: Python linting
-on: [push, pull_request]
+on:
+  pull_request: {}
+  push: {}
+  repository_dispatch:
+      types: [test-command]
 jobs:
   test:
     name: Test

@@ -1,5 +1,7 @@
 name: Client Unit Testing
-on: [push, pull_request]
+on:
+  repository_dispatch:
+    types: [test-command]
 jobs:
   jest:
     runs-on: ubuntu-latest
