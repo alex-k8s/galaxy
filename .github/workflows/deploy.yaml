@@ -1,9 +1,9 @@
 on:
   repository_dispatch:
-    types: [preview-command]
+    types: [deploy-command]
 
 jobs:
-  preview:
+  deploy:
     container:
       image: dtzar/helm-kubectl:latest
       env:
@@ -51,18 +51,19 @@ jobs:
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
           body: ${{ steps.set.outputs.gxyoutput }}
 
-      - name: Record events and logs
-        id: record
-        run: |
-          kubectl get events -n "pr-${{ github.event.client_payload.github.payload.issue.number }}" > gxyevents;
-          while [[ $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-web[^ ]*' | wc -l) -ge 2 ]]; do echo "Waiting for extra web pod to be terminated" && sleep 1; done && kubectl logs -n "pr-$PR_NUM" $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-web[^ ]*') > gxyweblogs;
-          while [[ $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-job[^ ]*' | wc -l) -ge 2 ]]; do echo "Waiting for extra job pod to be terminated" && sleep 1; done && kubectl logs -n "pr-$PR_NUM" $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-job[^ ]*')  > gxyjoblogs;
-          while [[ $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-workflow[^ ]*' | wc -l) -ge 2 ]]; do echo "Waiting for extra workflow pod to be terminated" && sleep 1; done && kubectl logs -n "pr-$PR_NUM" $(kubectl get pods -n "pr-$PR_NUM" | grep -o '[^ ]*galaxy-workflow[^ ]*') > gxywflogs;
-        shell: bash
-
       - name: Set date and time
         id: date
         run: echo "::set-output name=date::$(echo $(date +'%d-%m-%y %H:%M:%S'))"
+
+      - name: Record events and logs
+        id: record
+        run: |
+          bash /__w/galaxy/galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" events > gxyevents;
+          bash /__w/galaxy/galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" web > gxyweblogs;
+          bash /__w/galaxy/galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" job  > gxyjoblogs;
+          bash /__w/galaxy/galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" workflow > gxywflogs;
+        shell: bash
+
       - uses : cruizsan/github-action-gists@master
         id: create_gist
         with:
