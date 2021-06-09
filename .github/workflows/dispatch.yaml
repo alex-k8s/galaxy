@@ -11,7 +11,7 @@ jobs:
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           commands: deploy, teardown, test, gistlogs
-          reactions: rocket
+          reactions: true
           permission: write
           issue-type: pull-request
           static-args: |
