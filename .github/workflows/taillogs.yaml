@@ -134,7 +134,7 @@ jobs:
           repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
           body: |
-            This is your web handler log from ${{ steps.date.outputs.date }}:
+            This is your job handler log from ${{ steps.date.outputs.date }}:
             ```
             ${{ steps.set.outputs.gxyjoblogs }}
             ```
@@ -179,7 +179,7 @@ jobs:
           repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
           body: |
-            This is your web handler log from ${{ steps.date.outputs.date }}:
+            This is your workflow handler log from ${{ steps.date.outputs.date }}:
             ```
             ${{ steps.set.outputs.gxywflogs }}
             ```
