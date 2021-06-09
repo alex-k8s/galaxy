@@ -73,7 +73,7 @@ jobs:
         id: record
         run: |
           git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
-          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" web > gxyweblogs;
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" web | tail -n 100 > gxyweblogs;
         shell: bash
 
       - id: set
@@ -118,7 +118,7 @@ jobs:
         id: record
         run: |
           git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
-          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" job  > gxyjoblogs;
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" job | tail -n 100 > gxyjoblogs;
         shell: bash
 
       - id: set
@@ -163,7 +163,7 @@ jobs:
         id: record
         run: |
           git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
-          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" worfklow > gxywflogs;
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" workflow | tail -n 100 > gxywflogs;
         shell: bash
 
       - id: set

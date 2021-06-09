@@ -116,7 +116,7 @@ jobs:
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           gist_id: "${{ steps.gistinfo.outputs.replaced }}"
-          gist_file_name: worfklow-handler.log
+          gist_file_name: workflow-handler.log
           file_path: ./gxywflogs
 
       - name: Comment url to gist

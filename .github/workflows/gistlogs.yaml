@@ -30,7 +30,7 @@ jobs:
           bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" events > gxyevents;
           bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" web > gxyweblogs;
           bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" job  > gxyjoblogs;
-          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" worfklow > gxywflogs;
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" workflow > gxywflogs;
         shell: bash
 
       - uses : cruizsan/github-action-gists@master
@@ -84,7 +84,7 @@ jobs:
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           gist_id: "${{ steps.gistinfo.outputs.replaced }}"
-          gist_file_name: worfklow-handler.log
+          gist_file_name: workflow-handler.log
           file_path: ./gxywflogs
 
       - name: Comment url to gist
@@ -323,7 +323,7 @@ jobs:
         id: record
         run: |
           git clone https://github.com/cloudve/galaxy-k8s-dev-env &&
-          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" worfklow > gxywflogs;
+          bash ./galaxy-k8s-dev-env/get_logs.sh "pr-$PR_NUM" workflow > gxywflogs;
         shell: bash
 
       - uses : cruizsan/github-action-gists@master
@@ -355,7 +355,7 @@ jobs:
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           gist_id: "${{ steps.gistinfo.outputs.replaced }}"
-          gist_file_name: worfklow-handler.log
+          gist_file_name: workflow-handler.log
           file_path: ./gxywflogs
 
       - name: Comment url to gist
