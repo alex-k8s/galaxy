@@ -34,7 +34,7 @@ jobs:
         run: mkdir -p ~/.kube && echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
       - name: deploy
         id: deploy
-        run: bash .github/scripts/deploy_preview.sh ${{ github.event.client_payload.slash_command.args.named.args }}
+        run: bash .github/scripts/deploy_preview.sh ${{ github.event.client_payload.slash_command.args.named.extraargs }}
         shell: bash
 
       - id: set
