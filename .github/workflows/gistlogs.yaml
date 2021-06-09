@@ -4,7 +4,7 @@ on:
 
 jobs:
   all:
-    if: contains(github.event.client_payload.slash_command.args.all, 'all')
+    if: contains(github.event.client_payload.slash_command.args.unnamed.all, 'all')
     container:
       image: dtzar/helm-kubectl:latest
       env:
@@ -96,7 +96,7 @@ jobs:
           body: "See all your latest logs for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: https://gist.githubusercontent.com/galaxy-k8s/${{ steps.gistinfo.outputs.replaced }}"
 
   events:
-    if: contains(github.event.client_payload.slash_command.args.all, 'events')
+    if: contains(github.event.client_payload.slash_command.args.unnamed.all, 'events')
     container:
       image: dtzar/helm-kubectl:latest
       env:
@@ -164,7 +164,7 @@ jobs:
 
 
   web:
-    if: contains(github.event.client_payload.slash_command.args.all, 'web')
+    if: contains(github.event.client_payload.slash_command.args.unnamed.all, 'web')
     container:
       image: dtzar/helm-kubectl:latest
       env:
@@ -232,7 +232,7 @@ jobs:
 
 
   job:
-    if: contains(github.event.client_payload.slash_command.args.all, 'job')
+    if: contains(github.event.client_payload.slash_command.args.unnamed.all, 'job')
     container:
       image: dtzar/helm-kubectl:latest
       env:
@@ -300,7 +300,7 @@ jobs:
 
 
   workflow:
-    if: contains(github.event.client_payload.slash_command.args.all, 'workflow')
+    if: contains(github.event.client_payload.slash_command.args.unnamed.all, 'workflow')
     container:
       image: dtzar/helm-kubectl:latest
       env:
@@ -367,7 +367,7 @@ jobs:
           body: "See all your latest workflow handler logs for 'galaxy-pr-${{ github.event.client_payload.github.payload.issue.number }}-${{ steps.date.outputs.date }}' at: https://gist.githubusercontent.com/galaxy-k8s/${{ steps.gistinfo.outputs.replaced }}"
 
   wrong:
-    if: "!contains(github.event.client_payload.slash_command.args.all, 'all') && !contains(github.event.client_payload.slash_command.args.all, 'events') && !contains(github.event.client_payload.slash_command.args.all, 'web') && !contains(github.event.client_payload.slash_command.args.all, 'job') && !contains(github.event.client_payload.slash_command.args.all, 'workflow')"
+    if: "!contains(github.event.client_payload.slash_command.args.unnamed.all, 'all') && !contains(github.event.client_payload.slash_command.args.unnamed.all, 'events') && !contains(github.event.client_payload.slash_command.args.unnamed.all, 'web') && !contains(github.event.client_payload.slash_command.args.unnamed.all, 'job') && !contains(github.event.client_payload.slash_command.args.unnamed.all, 'workflow')"
     container:
       image: dtzar/helm-kubectl:latest
       env:
@@ -384,4 +384,4 @@ jobs:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
           repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
-          body: "No valid arguments were found. Expected: `/gistlogs (all|events|web|job|workflow)`. Got `/gistlogs ${{github.event.client_payload.slash_command.args.all}}`"
+          body: "No valid arguments were found. Expected: `/gistlogs (all|events|web|job|workflow)`. Got `/gistlogs ${{github.event.client_payload.slash_command.args.unnamed.all}}`"
