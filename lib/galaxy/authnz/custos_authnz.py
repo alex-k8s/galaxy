@@ -90,6 +90,7 @@ class CustosAuthnz(IdentityProvider):
         else:
             userinfo = self._get_userinfo(oauth2_session)
         email = userinfo['email']
+        username = userinfo.get('preferred_username', self._generate_username(trans, email))
         user_id = userinfo['sub']
 
         # Create or update custos_authnz_token record
