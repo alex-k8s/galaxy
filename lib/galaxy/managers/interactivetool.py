@@ -260,16 +260,10 @@ class InteractiveToolManager:
                 if entry_point.entry_url:
                     rval = '{}/{}'.format(rval.rstrip('/'), entry_point.entry_url.lstrip('/'))
             else:
-<<<<<<< HEAD
-                rval = self.app.url_for(f'/{entry_point_prefix}/access/{entry_point_class}/{entry_point_encoded_id}/{entry_point.token}/')
-            if entry_point.entry_url:
-                rval = f"{rval.rstrip('/')}/{entry_point.entry_url.lstrip('/')}"
-=======
                 rval = self.get_entry_point_path(trans, entry_point)
             # Add trailing slash to the URL
             if rval[-1] != "/":
                 rval = f'{rval}/'
->>>>>>> b280761828b14d72d22184470fd274335fb54e29
             return rval
 
     def get_entry_point_subdomain(self, trans, entry_point):
