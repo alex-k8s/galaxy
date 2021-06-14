@@ -113,9 +113,13 @@ class CustosAuthnz(IdentityProvider):
                         message = f"There already exists a user with email {email}.  To associate this external login, you must first be logged in as that existing account."
                         log.exception(message)
                         raise exceptions.AuthenticationFailed(message)
-                else:
+                elif self.config['provider'] == 'custos':
                     login_redirect_url = f"{login_redirect_url}root/login?confirm=true&custos_token={json.dumps(token)}"
                     return login_redirect_url, None
+                else:
+                    user = trans.app.user_manager.create(email=email, username=username)
+                    if trans.app.config.user_activation_on:
+                        trans.app.user_manager.send_activation_email(trans, email, username)
 
             custos_authnz_token = CustosAuthnzToken(user=user,
                                    external_user_id=user_id,
