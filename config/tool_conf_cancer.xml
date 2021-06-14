@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<toolbox monitor="true">
+  <section id="cancertools" name="Cancer Tools">
+    <tool file="cancer/basic-illumination/basic_illumination.xml" />
+    <tool file="cancer/ashlar/ashlar.xml" />
+    <tool file="cancer/S3segmenter/s3segmenter.xml" />
+    <tool file="cancer/UnMicst/unmicst.xml" />
+    <tool file="cancer/naivestates/naivestates.xml" />
+    <tool file="cancer/quantification/quantification.xml" />
+  </section>
+</toolbox>
