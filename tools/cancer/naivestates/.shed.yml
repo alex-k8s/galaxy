@@ -1,0 +1,11 @@
+owner: perssond
+remote_repository_url: https://github.com/ohsu-comp-bio/naivestates
+categories: 
+  - "CompBio Galaxy Wrappers"
+repositories:
+  naivestates:
+    description: "naivestates is a label-free, cluster-free tool for inferring cell types from quantified marker expression data"
+    include: 
+      - naivestates.xml
+      - macros.xml
+      - main.R
