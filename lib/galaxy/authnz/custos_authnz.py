@@ -138,7 +138,7 @@ class CustosAuthnz(IdentityProvider):
             custos_authnz_token.refresh_expiration_time = refresh_expiration_time
         trans.sa_session.add(custos_authnz_token)
         trans.sa_session.flush()
-        return login_redirect_url, custos_authnz_token.user
+        return "/", custos_authnz_token.user
 
     def create_user(self, token, trans, login_redirect_url):
         token_dict = json.loads(token)
