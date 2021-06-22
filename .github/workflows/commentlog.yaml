@@ -1,6 +1,6 @@
 on:
   repository_dispatch:
-    types: [taillogs-command]
+    types: [commentlog-command]
 
 jobs:
   events:
