@@ -1,0 +1,63 @@
+
+
+        <!-- Parameters not referenced in mcmicro docs -->
+        <!--
+        <param name="stack_probs" type="data" format="tabular,tsv" label="Stack Probabilities"/>
+        <param name="dearray_path" type="data" format="?" label="?"/>
+        <param name="mask" type="select" label="Mask Type">
+            <option value="tissue">Tissue</option>
+            <option value="TMA">TMA</option>
+        </param>
+        <param name="nuclei_region" type="select" label="Nuclei Region Detection Strategy">
+            <option value="watershedContourInt">Watershed Contour Intensity</option>
+            <option value="watershedContourDist">Watershed Contour Distance</option>
+            <option value="watershedBWDist">Watershed BW Distance</option>
+            <option value="dilation">Dilation</option>
+        </param>
+        <param name="save_mask" type="boolean" label="Save Mask"/>
+        <param name="save_fig" type="boolean" label="Save Figure"/>
+        -->
+
+
+
+
+
+
+
+
+        <!-- Parameters specifically referenced in mcmicro docs -->
+        <!--
+        <param name="prob_map_channel" type="integer" default="-1" label="Color channel to use for nuclei segmentation"/>
+        <param name="nuclei_filter" type="select" label="Method to filter false positive nuclei">
+            <option value="IntPM">Use Probability Intensity</option>
+            <option value="LoG">?</option>
+            <option value="Int">Use Raw Image Intensity</option>
+            <option value="none">No Filtering</option>
+        </param>
+        <param name="log_sigma" type="string" default="[3,60]" label="Range of nuclei diameters use when searching"/>
+        <conditional name="cytoplasm">
+            <param name="segment_cytoplasm" type="select" label="Treatment of Cytoplasm">
+                <option value="segmentCytoplasm">Segment</option>
+                <option value="ignoreCytoplasm">Ignore</option>
+            </param>
+
+            <when value="segmentCytoplasm">
+                <param name="cyto_mask_channel" type="integer" value="2" label="Channel for cytoplasm segmentation"/>
+                <conditional name="method">
+                    <param name="cyto_method" type="select" label="Method for cytoplasm segmentation">
+                        <option value="hybrid">Hybrid Segmentation</option>
+                        <option value="distanceTransform">Distance Transform</option>
+                        <option value="bwdistanceTransform">BW Distance Transform</option>
+                        <option value="ring">Ring Segmentation</option>
+                    </param>
+                    
+                    <when value="ring">
+                        <param name="cyto_dilation" type="integer" default="5" label="Pixel radius for nucleus cytoplasm ring"/>
+                    </when>
+                </conditional>
+            </when>
+        </conditional>
+        <param name="tissue_mask_channel" type="text" label="Channels to use for identifying issue area (comma separated list)" help="Defaults to nuclei channels plus cytoplasm channels."/>
+        -->
+
+
