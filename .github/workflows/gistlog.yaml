@@ -1,6 +1,6 @@
 on:
   repository_dispatch:
-    types: [gistlogs-command]
+    types: [gistlog-command]
 
 jobs:
   all:
