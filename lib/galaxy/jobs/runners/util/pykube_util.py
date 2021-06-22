@@ -152,6 +152,8 @@ def job_object_dict(params, job_prefix, spec):
         },
         "spec": spec,
     }
+    log.debug("\n\n\nPRINTING TEMPLATE SPEC\n\n\n")
+    log.debug(str(k8s_job_obj))
     return k8s_job_obj
 
 
