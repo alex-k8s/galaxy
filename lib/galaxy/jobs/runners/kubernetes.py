@@ -440,6 +440,7 @@ class KubernetesJobRunner(AsynchronousJobRunner):
            Setting these variables changes the described behaviour in the job file shell script
            used to execute the tool inside the container.
         """
+
         container = self._find_container(ajs.job_wrapper)
         k8s_container = {
             "name": self.__get_k8s_container_name(ajs.job_wrapper),
